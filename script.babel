@@ -1,0 +1,190 @@
+// show app
+// code by (theTradeCoder)(Mamun Abdullah)
+class App extends React.Component{
+  render(){
+    return(
+    <div id="app">
+    <Header />
+    <Treemap />
+    <About />
+    <Footer />
+    </div>
+    )
+  }
+}
+
+// header code
+const Header=()=>{return(
+<header className="bg-dark">
+  <div>
+    <h1 className="text-center text-light pt-1 pb-2">D3js Treemap Diagram</h1>
+  </div>
+</header>
+)};
+
+// Footer Code
+const Footer =()=>{return(
+<footer className="bg-dark">
+  <div className="p-2">
+  <span>
+    <p className="text-center text-light">Developer: <a href="https://linkedin.com/in/thetradecoder" className="nav-link author">theTradeCoder</a></p>
+  </span>  
+  </div>
+</footer>
+)};
+
+// About code
+const About = ()=>{return(
+<div id="about">
+  <div className="container about">
+    <h2>About:</h2>
+    <p>
+    <a href="https://freecodecamp.com">-freeCodeCamp Data Visualization Project</a><br/>
+    - Data Visualization with D3 Tree Map<br/>
+    - A D3js and Reactjs Project
+    </p>
+  </div>
+</div>
+)};
+
+
+//Treemap code (main app)
+class Treemap extends React.Component{
+  render(){
+    const url = "https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json";
+    const req =  new XMLHttpRequest();
+    req.open('GET', url, true);
+    req.send();
+    req.onload = ()=>{
+    const json = JSON.parse(req.responseText);
+    const dataset = json;
+      
+   
+    const svg = d3.select('#map')
+    .append('svg')
+    .attr('width', 992)
+    .attr('height', 550)
+    .style('background-color', 'silver');
+      
+      const w = +svg.attr('width');
+      const h = +svg.attr('height');
+      const pad = 60;
+      
+      const interpolateColor = (color)=>{return d3.interpolateRgb(color, '#000')(.1)};
+      const colors = d3.scaleOrdinal(d3.schemeCategory10.map(interpolateColor));   
+      
+ 
+      const treemap = d3.treemap()
+      .size([w, h])
+      .paddingInner(3);
+      
+      const root = d3.hierarchy(dataset)
+      .eachBefore(d=>{d.data.id = (d.parent ? d.parent.data.id + "." : "") + d.data.name;})
+      .sum(d=>d.value)
+      .sort((a,b)=>b.value - a.value);
+      
+      //call treemap
+      treemap(root);
+     
+      // tooltip
+     const tooltip = d3.select('#map')
+     .append('g')
+     .append('div')
+     .attr('id', 'tooltip')
+     .style('opacity', 0);
+      
+      
+      // drawing the map 
+      // main part cell and tile 
+      // cell and tile separated for text independent text appending later
+      const cell = svg.selectAll('g')
+      .data(root.leaves())
+      .enter()
+      .append('g')
+      .attr("transform", d=>`translate(${d.x0}, ${d.y0})`);
+      
+      const tile = cell
+      .append("rect")
+      .attr("id", d=>d.data.id)
+      .attr("class", "tile")
+      .attr("width", d=>d.x1 - d.x0)
+      .attr("height", d=>d.y1 - d.y0)
+      .attr('fill', d=>colors(d.data.category))
+      .attr('data-name', d=>d.data.name)
+      .attr('data-category', d=>d.data.category)
+      .attr('data-value', d=>d.data.value)
+      .on('mousemove', d=>{
+        tooltip.style('opacity', 1)
+        .style('left', (d3.event.pageX+20)+'px')
+        .style('top', (d3.event.pageY-10)+'px')
+        .attr('data-value', d.data.value)
+        .html(`<i>${d.data.name}</i> <br/>Category: ${d.data.category}<br/>Value: $${(d.data.value/1000000).toFixed(3)} m`)
+      })
+      .on('mouseout', d=>{
+        tooltip.style('opacity', 0)
+        .style('left', 0)
+        .style('top', 0)
+      });
+   
+      
+      cell.append("g")   
+      .selectAll("text")
+      .data(d=> d.data.name.split(/(?=[A-Z])/)) // spliting the words to adjust them in the cell
+      .enter()
+      .append("text")
+      .text(d=>d)
+      .attr("x", 10)
+      .attr("y", (d,i)=>18+i*12) // i*12 for putting each word as each line height
+      .style('font-size', '9px');
+   
+
+      // legend 
+      const legend = d3.select('#legend')
+      .append('svg')
+      .attr('width', w)
+      .attr('height', 100);
+      
+      
+      // console.log(root.leaves());
+      // categories dataset for legend item
+      const categories = root.leaves().map(d=>d.data.category).filter((e,i,arr)=>arr.indexOf(e)===i);
+      
+  
+      
+      const legendItems = 
+       legend.append('g')
+      .attr('transform', 'translate(0,20)')
+      .selectAll('g')
+      .data(categories)
+      .enter()
+      .append('g')
+      .attr('transform', (d,i)=>`translate(${i*100}, 20)`); 
+      
+      legendItems.append('rect')
+      .attr('class', 'legend-item')
+      .attr('width', 50)
+      .attr('height', 30)
+      .attr('fill', d=>colors(d));
+      
+      legendItems.append('text')
+      .text(d=>d)
+      .attr('transform', 'translate(0, 50)');
+    }
+    
+    
+    return(
+    <div id="treemap" className="container">
+        <div className="container text-center">
+          <div id="title" className="pt-3"><h2>Movie Sales Record</h2></div>
+          <div id="description"><p>Best Selling Movies</p></div>
+          <div id="map"></div>
+          <div id="legend"></div>
+          <div id="source"><hr/>Data source: <a className="text-left" href="https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json" target="_blank">Top movie sales data</a><hr/></div>
+        </div>
+    </div>
+    )
+  }
+}
+
+// render the app 
+ReactDOM.render(<App />, document.getElementById('content'))

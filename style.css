@@ -1,0 +1,25 @@
+
+#tooltip{
+  max-width:200px;
+  height:auto;
+  color:white;
+  padding: 5px;
+  position:absolute;
+  background-color:rgba(0,0,0,.7);
+  border-radius:5px;
+}
+#description{
+  font-size:1.2rem;
+}
+hr, .about{
+  max-width:992px;
+}
+a:hover, a:focus{
+  text-decoration:none;
+}
+.author:hover{
+  color:white;
+}
+#treemap{
+  overflow-x:scroll;
+}
